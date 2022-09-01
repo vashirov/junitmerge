@@ -4,7 +4,7 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 
 
-def merge_results(input_files, output_file):
+def merge_results(input_files, output_file, classname_prefix=None):
     errors = 0
     failures = 0
     skipped = 0
@@ -49,6 +49,11 @@ def merge_results(input_files, output_file):
     testsuite.attrib["hostname"] = f"{hostname}"
 
     for case in cases:
+        if classname_prefix is not None:
+            for i in case:
+                old_classname = i.attrib["classname"]
+                new_classname = f"{classname_prefix}.{old_classname}"
+                i.attrib["classname"] = new_classname
         testsuite.extend(case)
     new_tree = ET.ElementTree(testsuites)
 
@@ -63,9 +68,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=argparse.FileType("r"), nargs="+")
     parser.add_argument("output", type=argparse.FileType("wb"))
+    parser.add_argument(
+        "--classname", required=False, help="append a prefix to test's classname"
+    )
     args = parser.parse_args()
 
-    merge_results(args.input, args.output)
+    merge_results(args.input, args.output, args.classname)
 
 
 if __name__ == "__main__":
